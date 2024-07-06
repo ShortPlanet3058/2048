@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>2048 Game</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f0f0f0;
+      font-family: 'Helvetica Neue', sans-serif;
+    }
+
+    .container {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 10px;
+      margin: 20px auto;
+    }
+
+    .tile {
+      width: 80px;
+      height: 80px;
+      background-color: #eee;
+      border-radius: 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      font-weight: bold;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .tile-2 { background-color: #eee4da; color: #776e65; }
+    .tile-4 { background-color: #ede0c8; color: #776e65; }
+    .tile-8 { background-color: #f2b179; color: #f9f6f2; }
+    .tile-16 { background-color: #f59563; color: #f9f6f2; }
+    .tile-32 { background-color: #f67c5f; color: #f9f6f2; }
+    .tile-64 { background-color: #f65e3b; color: #f9f6f2; }
+    .tile-128 { background-color: #edcf72; color: #f9f6f2; }
+    .tile-256 { background-color: #edcc61; color: #f9f6f2; }
+    .tile-512 { background-color: #edc850; color: #f9f6f2; }
+    .tile-1024 { background-color: #edc53f; color: #f9f6f2; }
+    .tile-2048 { background-color: #edc22e; color: #f9f6f2; }
+    .tile-4096, .tile-8192, .tile-16384, .tile-32768, .tile-65536, .tile-131072, .tile-262144, .tile-524288, .tile-1048576, .tile-2097152, .tile-4194304, .tile-8388608, .tile-16777216, .tile-33554432, .tile-67108864, .tile-134217728, .tile-268435456, .tile-536870912, .tile-1073741824, .tile-2147483648, .tile-4294967296 {
+      background-color: #3c3a32;
+      color: #f9f6f2;
+    }
+
+    .tile:hover {
+      transform: scale(1.1);
+    }
+
+    .score {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .score h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .score span {
+      font-size: 32px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="score">
+      <h2>Score:</h2>
+      <span id="score">0</span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <script>
+    // Game logic
+    const grid = [];
+    let score = 0;
+
+    // Initialize the grid
+    function initializeGrid() {
+      for (let i = 0; i < 4; i++) {
+        grid[i] = [];
+        for (let j = 0; j < 4; j++) {
+          grid[i][j] = 0;
+        }
+      }
+    }
+
+    // Add a new tile to the grid
+    function addTile() {
+      let emptyTiles = [];
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+          if (grid[i][j] === 0) {
+            emptyTiles.push([i, j]);
+          }
+        }
+      }
+
+      if (emptyTiles.length > 0) {
+        let [i, j] = emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
+        grid[i][j] = 2;
+        updateTile(i, j);
+      }
+    }
+
+    // Update the tile at the given coordinates
+    function updateTile(i, j) {
+      const tile = document.querySelector(`.tile[data-row="${i}"][data-col="${j}"]`);
+      if (grid[i][j] !== 0) {
+        tile.textContent = grid[i][j];
+        tile.className = `tile tile-${grid[i][j]}`;
+      } else {
+        tile.textContent = "";
+        tile.className = 'tile';
+      }
+    }
+
+    // Move tiles in the given direction
+    function moveTiles(direction) {
+      let moved = false;
+      let newGrid = [];
+
+      // Create a copy of the grid
+      for (let i = 0; i < 4; i++) {
+        newGrid[i] = [...grid[i]];
+      }
+
+      // Move tiles up
+      if (direction === 'up') {
+        for (let j = 0; j < 4; j++) {
+          let k = 0;
+          for (let i = 0; i < 4; i++) {
+            if (newGrid[i][j] !== 0) {
+              newGrid[k][j] = newGrid[i][j];
+              if (k !== i) {
+                newGrid[i][j] = 0;
+                moved = true;
+              }
+              k++;
+            }
+          }
+        }
+      }
+
+      // Move tiles down
+      if (direction === 'down') {
+        for (let j = 0; j < 4; j++) {
+          let k = 3;
+          for (let i = 3; i >= 0; i--) {
+            if (newGrid[i][j] !== 0) {
+              newGrid[k][j] = newGrid[i][j];
+              if (k !== i) {
+                newGrid[i][j] = 0;
+                moved = true;
+              }
+              k--;
+            }
+          }
+        }
+      }
+
+      // Move tiles left
+      if (direction === 'left') {
+        for (let i = 0; i < 4; i++) {
+          let k = 0;
+          for (let j = 0; j < 4; j++) {
+            if (newGrid[i][j] !== 0) {
+              newGrid[i][k] = newGrid[i][j];
+              if (k !== j) {
+                newGrid[i][j] = 0;
+                moved = true;
+              }
+              k++;
+            }
+          }
+        }
+      }
+
+      // Move tiles right
+      if (direction === 'right') {
+        for (let i = 0; i < 4; i++) {
+          let k = 3;
+          for (let j = 3; j >= 0; j--) {
+            if (newGrid[i][j] !== 0) {
+              newGrid[i][k] = newGrid[i][j];
+              if (k !== j) {
+                newGrid[i][j] = 0;
+                moved = true;
+              }
+              k--;
+            }
+          }
+        }
+      }
+
+      // Merge tiles
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+          if (newGrid[i][j] !== 0) {
+            if (direction === 'up' && i > 0 && newGrid[i - 1][j] === newGrid[i][j]) {
+              newGrid[i - 1][j] *= 2;
+              score += newGrid[i - 1][j];
+              newGrid[i][j] = 0;
+              moved = true;
+            } else if (direction === 'down' && i < 3 && newGrid[i + 1][j] === newGrid[i][j]) {
+              newGrid[i + 1][j] *= 2;
+              score += newGrid[i + 1][j];
+              newGrid[i][j] = 0;
+              moved = true;
+            } else if (direction === 'left' && j > 0 && newGrid[i][j - 1] === newGrid[i][j]) {
+              newGrid[i][j - 1] *= 2;
+              score += newGrid[i][j - 1];
+              newGrid[i][j] = 0;
+              moved = true;
+            } else if (direction === 'right' && j < 3 && newGrid[i][j + 1] === newGrid[i][j]) {
+              newGrid[i][j + 1] *= 2;
+              score += newGrid[i][j + 1];
+              newGrid[i][j] = 0;
+              moved = true;
+            }
+          }
+        }
+      }
+
+      // Move tiles again after merging
+      if (direction === 'up') {
+        for (let j = 0; j < 4; j++) {
+          let k = 0;
+          for (let i = 0; i < 4; i++) {
+            if (newGrid[i][j] !== 0) {
+              newGrid[k][j] = newGrid[i][j];
+              if (k !== i) {
+                newGrid[i][j] = 0;
+                moved = true;
+              }
+              k++;
+            }
+          }
+        }
+      }
+
+      if (direction === 'down') {
+        for (let j = 0; j < 4; j++) {
+          let k = 3;
+          for (let i = 3; i >= 0; i--) {
+            if (newGrid[i][j] !== 0) {
+              newGrid[k][j] = newGrid[i][j];
+              if (k !== i) {
+                newGrid[i][j] = 0;
+                moved = true;
+              }
+              k--;
+            }
+          }
+        }
+      }
+
+      if (direction === 'left') {
+        for (let i = 0; i < 4; i++) {
+          let k = 0;
+          for (let j = 0; j < 4; j++) {
+            if (newGrid[i][j] !== 0) {
+              newGrid[i][k] = newGrid[i][j];
+              if (k !== j) {
+                newGrid[i][j] = 0;
+                moved = true;
+              }
+              k++;
+            }
+          }
+        }
+      }
+
+      if (direction === 'right') {
+        for (let i = 0; i < 4; i++) {
+          let k = 3;
+          for (let j = 3; j >= 0; j--) {
+            if (newGrid[i][j] !== 0) {
+              newGrid[i][k] = newGrid[i][j];
+              if (k !== j) {
+                newGrid[i][j] = 0;
+                moved = true;
+              }
+              k--;
+            }
+          }
+        }
+      }
+
+      if (moved) {
+        grid.length = 0;
+        for (let i = 0; i < 4; i++) {
+          grid.push([...newGrid[i]]);
+        }
+        addTile();
+        updateGrid();
+        updateScore();
+        checkGameOver();
+      }
+    }
+
+    // Update the entire grid
+    function updateGrid() {
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+          updateTile(i, j);
+        }
+      }
+    }
+
+    // Update the score
+    function updateScore() {
+      document.getElementById('score').textContent = score;
+    }
+
+    // Check if the game is over
+    function checkGameOver() {
+      let isGameOver = true;
+
+      // Check if there are any empty tiles
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+          if (grid[i][j] === 0) {
+            isGameOver = false;
+            break;
+          }
+        }
+      }
+
+      // Check if there are any possible merges
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+          if ((i > 0 && grid[i][j] === grid[i - 1][j]) ||
+              (i < 3 && grid[i][j] === grid[i + 1][j]) ||
+              (j > 0 && grid[i][j] === grid[i][j - 1]) ||
+              (j < 3 && grid[i][j] === grid[i][j + 1])) {
+            isGameOver = false;
+            break;
+          }
+        }
+      }
+
+      if (isGameOver) {
+        alert("Game Over! Your score is " + score);
+        initializeGrid();
+        score = 0;
+        addTile();
+        addTile();
+        updateGrid();
+        updateScore();
+      }
+    }
+
+    // Initialize the game
+    document.addEventListener('DOMContentLoaded', () => {
+      const gridContainer = document.getElementById('grid');
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          tile.dataset.row = i;
+          tile.dataset.col = j;
+          gridContainer.appendChild(tile);
+        }
+      }
+
+      initializeGrid();
+      addTile();
+      addTile();
+      updateGrid();
+
+      // Handle keyboard input
+      document.addEventListener('keydown', (event) => {
+        switch (event.key) {
+          case 'ArrowUp':
+            moveTiles('up');
+            break;
+          case 'ArrowDown':
+            moveTiles('down');
+            break;
+          case 'ArrowLeft':
+            moveTiles('left');
+            break;
+          case 'ArrowRight':
+            moveTiles('right');
+            break;
+        }
+      });
+    });
+  </script>
+</body>
+</html>
